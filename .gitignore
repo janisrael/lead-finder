@@ -1,0 +1,80 @@
+# Python
+venv/
+myenv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Environment
+.env
+.env.*
+*.env
+
+# Logs
+*.log
+logs/
+access.log*
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+places.db
+
+# Data files (generated at runtime)
+*.csv
+businesses.csv
+businesses_with_emails.csv
+
+# Archives and backups
+*.zip
+archive/
+backups/
+* copy.*
+*_copy.*
+*_old.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+test_*.html
+test_*.py
+tests/
+*_test.py
+
+# Legacy PHP files (project migrated to Python)
+*.php
+
+# Utility scripts (one-time use, not needed in production)
+fetcher.py
+generate-email.py
+init_db.py
+
+# Development HTML variants
+index_vb.html
+
+# Documentation (keep only essential README files)
+*.md
+!README.md
+!CI_CD_SECRETS.md
+!.github/workflows/README.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# CI/CD
+bandit-report.json
+
