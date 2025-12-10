@@ -22,11 +22,6 @@ COPY app.js ./
 COPY favicon.ico ./
 COPY favicon.svg ./
 
-# Copy optional template and static files if they exist
-# Using a workaround: copy everything and let COPY handle missing files gracefully
-COPY templates* ./templates/ 2>/dev/null || mkdir -p ./templates || true
-COPY static* ./static/ 2>/dev/null || mkdir -p ./static || true
-
 # Create data directory for SQLite with proper permissions
 RUN mkdir -p /app/data && chmod 755 /app/data
 
