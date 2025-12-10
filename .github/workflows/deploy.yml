@@ -104,9 +104,12 @@ jobs:
           
           # Build Docker image directly on Hetzner server
           echo "=== Building Docker image on Hetzner ==="
-          ssh ${SSH_OPTS} root@${{ secrets.HETZNER_HOST }} "export GOOGLE_PLACES_API_KEY='${GOOGLE_PLACES_API_KEY}' && bash -s" << 'DEPLOY_SCRIPT'
+          ssh ${SSH_OPTS} root@${{ secrets.HETZNER_HOST }} bash -s << DEPLOY_SCRIPT
             set -e
             set -o pipefail
+            
+            # Set Google Places API key from GitHub Actions environment variable
+            GOOGLE_PLACES_API_KEY='${GOOGLE_PLACES_API_KEY}'
             
             cd /tmp
             rm -rf leadfinder-build || true
@@ -138,14 +141,17 @@ jobs:
               kubectl apply -f /tmp/leadfinder-k8s/namespace.yaml || true
               
               # Create/update secret with Google Places API key from GitHub Secrets
+              echo "Creating/updating Kubernetes secret with Google Places API key..."
               kubectl create secret generic leadfinder-secrets \
-                --from-literal=secret-key="$(openssl rand -hex 32)" \
+                --from-literal=secret-key="\$(openssl rand -hex 32)" \
                 --from-literal=flask-env='production' \
                 --from-literal=port='5000' \
-                --from-literal=google-places-api-key="${GOOGLE_PLACES_API_KEY}" \
+                --from-literal=google-places-api-key="\${GOOGLE_PLACES_API_KEY}" \
                 --from-literal=debug='false' \
                 -n leadfinder \
                 --dry-run=client -o yaml | kubectl apply -f - || true
+              
+              echo "Secret created/updated successfully"
               
               kubectl apply -f /tmp/leadfinder-k8s/deployment.yaml || true
               kubectl apply -f /tmp/leadfinder-k8s/service.yaml || true
