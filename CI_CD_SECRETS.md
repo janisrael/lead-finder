@@ -15,6 +15,7 @@ Add these secrets in your GitHub repository settings: **Settings → Secrets and
 | `HETZNER_SSH_PRIVATE_KEY` | SSH private key for Hetzner server access | `-----BEGIN OPENSSH PRIVATE KEY-----...` | ✅ Yes |
 | `HETZNER_HOST` | Hetzner server IP address | `178.156.162.135` | ✅ Yes |
 | `GOOGLE_PLACES_API_KEY` | Google Places API key for location searches | `AIzaSy...` | ✅ Yes |
+| `FLASK_SECRET_KEY` | Flask secret key for session security (generate with `openssl rand -hex 32`) | `a1b2c3d4e5f6...` | ✅ Yes |
 
 ### Optional Secrets
 

@@ -92,6 +92,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REF: ${{ github.ref }}
           GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
+          FLASK_SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
           SSH_OPTS: "-i ~/.ssh/hetzner_key -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -o ConnectTimeout=30"
         run: |
           echo "=== Deploying to Hetzner Kubernetes ==="
@@ -108,8 +109,9 @@ jobs:
             set -e
             set -o pipefail
             
-            # Set Google Places API key from GitHub Actions environment variable
+            # Set environment variables from GitHub Actions
             GOOGLE_PLACES_API_KEY='${GOOGLE_PLACES_API_KEY}'
+            FLASK_SECRET_KEY='${FLASK_SECRET_KEY}'
             
             cd /tmp
             rm -rf leadfinder-build || true
@@ -140,16 +142,23 @@ jobs:
             if [ -d "/tmp/leadfinder-k8s" ] && [ "$(ls -A /tmp/leadfinder-k8s/*.yaml 2>/dev/null)" ]; then
               kubectl apply -f /tmp/leadfinder-k8s/namespace.yaml || true
               
-              # Create/update secret with Google Places API key from GitHub Secrets
-              echo "Creating/updating Kubernetes secret with Google Places API key..."
+              # Create/update secret with values from GitHub Secrets
+              echo "Creating/updating Kubernetes secret..."
+              
+              # Generate secret key if not provided (for first deployment)
+              if [ -z "\${FLASK_SECRET_KEY}" ]; then
+                echo "Warning: FLASK_SECRET_KEY not set, generating random key..."
+                FLASK_SECRET_KEY=\$(openssl rand -hex 32)
+              fi
+              
               kubectl create secret generic leadfinder-secrets \
-                --from-literal=secret-key="\$(openssl rand -hex 32)" \
+                --from-literal=secret-key="\${FLASK_SECRET_KEY}" \
                 --from-literal=flask-env='production' \
                 --from-literal=port='5000' \
                 --from-literal=google-places-api-key="\${GOOGLE_PLACES_API_KEY}" \
                 --from-literal=debug='false' \
                 -n leadfinder \
-                --dry-run=client -o yaml | kubectl apply -f - || true
+                --dry-run=client -o yaml | kubectl apply - || true
               
               echo "Secret created/updated successfully"
               
