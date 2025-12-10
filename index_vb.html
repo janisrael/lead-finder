@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Lead Generator</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    #loadingOverlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.3);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    .spinner {
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid #2980b9;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg);}
+      100% { transform: rotate(360deg);}
+    }
+    .preset-btn {
+      margin: 2px 4px 2px 0;
+      padding: 6px 12px;
+      border: 1px solid #2980b9;
+      background-color: #eaf3fb;
+      color: #2980b9;
+      border-radius: 4px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .preset-btn:hover {
+      background-color: #2980b9;
+      color: white;
+    }
+    #typeTags .tag {
+      display: inline-block;
+      background-color: #2980b9;
+      color: white;
+      padding: 4px 8px;
+      margin: 2px;
+      border-radius: 3px;
+      font-size: 0.9rem;
+      user-select: none;
+    }
+    #typeTags .tag button {
+      background: transparent;
+      border: none;
+      color: white;
+      font-weight: bold;
+      margin-left: 6px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="loadingOverlay">
+    <div class="spinner"></div>
+  </div>
+  
+  <h1>Lead Generator</h1>
+
+  <div class="top-container">
+    <form id="searchForm">
+      <label>Location (lat,lng):</label><br />
+      <input type="text" name="location" value="50.0405,-110.6766" required /><br />
+
+      <label>Radius (meters): <span id="toKm"></span> </label> <br />
+      <input id="radius" type="number" name="radius" value="10000" required /><br />
+
+      <label>Business Types:</label><br />
+      <div id="typeInput">
+        <input type="text" id="typeText" placeholder="Type and press Enter" />
+        <div id="typeTags"></div>
+      </div>
+      <input type="hidden" name="types" id="typesField" /><br />
+
+      <label>Has Website:</label>
+      <select name="has_website">
+        <option value="both" selected>Both</option>
+        <option value="yes" >Yes</option>
+        <option value="no">No</option>
+      </select><br /><br />
+
+      <button type="submit">Search</button>
+      <button type="button" id="exportBtn">Export as CSV</button>
+      <h2 id="count" style="margin-top:1rem;"></h2>
+    </form>
+
+    <div class="suggested-types-container">
+      <h3>Suggested Business Types:</h3>
+      <input type="text" id="typeSearch" placeholder="Search business types..." style="width: 100%; padding: 6px; margin-bottom: 10px; box-sizing: border-box;" />
+      <div id="presetTypes"></div>
+    </div>
+  </div>
+
+  <table id="resultsTable" border="1" style="margin-top:1rem; width: 100%; border-collapse: collapse;">
+    <thead>
+      <tr>
+        <th>#</th> 
+        <th>Name</th>
+        <th>Address</th>
+        <th style="width: 200px;">Phone</th>
+        <th>Website</th>
+        <th>Rating</th>
+        <th style="width: 300px;">Type</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    let typeList = [];
+
+    const input = document.getElementById('typeText');
+    const tagsContainer = document.getElementById('typeTags');
+    const hiddenField = document.getElementById('typesField');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+
+    const radiusInput = document.getElementById('radius');
+    const toKmDisplay = document.getElementById('toKm');
+
+    radiusInput.addEventListener('input', function () {
+      const km = (this.value / 1000).toFixed(2);
+      toKmDisplay.textContent = `(${km} km)`;
+    });
+
+    const presetTypes = [
+      'accounting', 'airport', 'amusement_park', 'aquarium', 'art_gallery', 'atm',
+      'bakery', 'bank', 'bar', 'beauty_salon', 'bicycle_store', 'book_store',
+      'bowling_alley', 'bus_station', 'cafe', 'campground', 'car_dealer',
+      'car_rental', 'car_repair', 'car_wash', 'casino', 'cemetery', 'church',
+      'city_hall', 'clothing_store', 'convenience_store', 'courthouse', 'dentist',
+      'department_store', 'doctor', 'drugstore', 'electrician', 'electronics_store',
+      'embassy', 'fire_station', 'florist', 'funeral_home', 'furniture_store',
+      'gas_station', 'gym', 'hair_care', 'hardware_store', 'hindu_temple',
+      'home_goods_store', 'hospital', 'insurance_agency', 'jewelry_store', 'laundry',
+      'lawyer', 'library', 'light_rail_station', 'liquor_store',
+      'local_government_office', 'locksmith', 'lodging', 'meal_delivery',
+      'meal_takeaway', 'mosque', 'movie_rental', 'movie_theater', 'moving_company',
+      'museum', 'night_club', 'painter', 'park', 'parking', 'pet_store', 'pharmacy',
+      'physiotherapist', 'plumber', 'police', 'post_office', 'primary_school',
+      'real_estate_agency', 'restaurant', 'roofing_contractor', 'rv_park', 'school',
+      'secondary_school', 'shoe_store', 'shopping_mall', 'spa', 'stadium', 'storage',
+      'store', 'subway_station', 'supermarket', 'synagogue', 'taxi_stand',
+      'tourist_attraction', 'train_station', 'transit_station', 'travel_agency',
+      'university', 'veterinary_care', 'zoo'
+    ];
+
+    const presetContainer = document.getElementById('presetTypes');
+    presetTypes.forEach(type => {
+      const btn = document.createElement('button');
+      btn.textContent = type.replace(/_/g, ' ');
+      btn.type = 'button';
+      btn.className = 'preset-btn';
+      btn.onclick = () => {
+        if (!typeList.includes(type)) {
+          typeList.push(type);
+          updateTags();
+        }
+      };
+      presetContainer.appendChild(btn);
+    });
+
+    // Searchable filter for suggested types
+    const typeSearchInput = document.getElementById('typeSearch');
+    typeSearchInput.addEventListener('input', () => {
+      const filter = typeSearchInput.value.trim().toLowerCase();
+      Array.from(presetContainer.children).forEach(button => {
+        const text = button.textContent.toLowerCase();
+        button.style.display = text.includes(filter) ? '' : 'none';
+      });
+    });
+
+    input.addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const val = input.value.trim().toLowerCase().replace(/\s+/g, '_');
+        if (val && !typeList.includes(val)) {
+          typeList.push(val);
+          updateTags();
+        }
+        input.value = '';
+      }
+    });
+
+    function updateTags() {
+      tagsContainer.innerHTML = '';
+      typeList.forEach((type, index) => {
+        const tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.textContent = type.replace(/_/g, ' ');
+
+        const removeBtn = document.createElement('button');
+        removeBtn.innerHTML = '×';
+        removeBtn.onclick = () => {
+          typeList.splice(index, 1);
+          updateTags();
+        };
+        tag.appendChild(removeBtn);
+        tagsContainer.appendChild(tag);
+      });
+
+      hiddenField.value = typeList.join(',');
+    }
+
+    document.getElementById('searchForm').onsubmit = async function (e) {
+      e.preventDefault();
+      loadingOverlay.style.display = 'flex';
+      try {
+        const formData = new FormData(e.target);
+        const params = new URLSearchParams(formData);
+
+        const res = await fetch('api.php?' + params.toString());
+        const data = await res.json();
+
+        const table = document.getElementById('resultsTable');
+        const tbody = table.querySelector('tbody');
+        tbody.innerHTML = '';
+
+        if (data.length === 0) {
+          alert('No results found.');
+          table.style.display = 'none';
+          document.getElementById('count').textContent = 'Found 0 businesses.';
+          return;
+        }
+
+        data.forEach((biz, index) => {
+          const typesList = Array.isArray(biz.types) ? biz.types.join(', ').replace(/_/g, ' ') : '';
+          const row = `<tr>
+            <td>${index + 1}</td>
+            <td>${biz.name}</td>
+            <td>${biz.address}</td>
+            <td>${biz.phone || ''}</td>
+            <td>${biz.website ? `<a href="${biz.website}" target="_blank" rel="noopener">Website</a>` : 'N/A'}</td>
+            <td>${biz.rating || ''}</td>
+            <td>${typesList}</td>
+            <td>${biz.status || ''}</td>
+          </tr>`;
+          tbody.innerHTML += row;
+        });
+
+        document.getElementById('count').textContent = `Found ${data.length} businesses.`;
+        table.style.display = 'table';
+      } catch {
+        alert('Error fetching data. Please try again.');
+      } finally {
+        loadingOverlay.style.display = 'none';
+      }
+    };
+
+    document.getElementById('exportBtn').onclick = () => {
+      const formData = new FormData(document.getElementById('searchForm'));
+      const params = new URLSearchParams(formData);
+      params.append('format', 'csv');
+      window.open('api.php?' + params.toString(), '_blank');
+    };
+  </script>
+</body>
+</html>

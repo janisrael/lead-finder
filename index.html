@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <title>Lead Finder</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=2">
+  <style>
+    #loadingOverlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.3);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    .spinner {
+      border: 6px solid var(--bg-primary);
+      border-top: 6px solid var(--accent-primary);
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg);}
+      100% { transform: rotate(360deg);}
+    }
+  </style>
+</head>
+<body>
+  <div id="loadingOverlay"><div class="spinner"></div></div>
+
+  <div id="mapModal">
+    <div>
+      <div class="map-header-tools">
+        <input id="mapSearchBox" type="text" placeholder="Search location..." />
+        <button type="button" onclick="closeMap()">Done</button>
+      </div>
+      <div id="map"></div>
+    </div>
+  </div>
+
+  <div class="header-section">
+    <h1>Lead Finder</h1>
+    <p class="subtitle">Discover and connect with businesses using Google Places API. Find leads by location, business type, and website availability.</p>
+  </div>
+
+  <div class="top-container">
+    <form id="searchForm" class="neu-container">
+      <div class="location-input-group">
+        <div class="location-field">
+          <label>Location (lat,lng):</label>
+          <input type="text" id="locationInput" name="location" value="50.0405,-110.6766" required />
+        </div>
+        <div class="map-button-wrapper">
+          <button type="button" onclick="openMap()">Pick from Map</button>
+        </div>
+      </div>
+
+      <label>Radius (KM) Max=50km: <span id="toKm" style="display: none;"></span> </label><br />
+      <input id="radius" type="number" name="radius" value="20" required /><br />
+      <div class="types-header">
+        <label>Business Types:</label>
+        <a type="button" onclick="clearSelectedTypes()">Clear</a>
+      </div>
+      <div id="typeInput">
+        <input type="text" id="typeText" placeholder="Type and press Enter" />
+        <div id="typeTags"></div>
+      </div>
+      <input type="hidden" name="types" id="typesField" /><br />
+      <label>Has Website:</label>
+      <select name="has_website">
+        <option value="both" selected>Both</option>
+        <option value="yes">Yes</option>
+        <option value="no">No</option>
+      </select><br /><br />
+
+      <div class="form-actions">
+        <button type="submit">Search</button>
+        <h2 id="count"></h2>
+        <button type="button" id="exportBtn">Export as CSV</button>
+      </div>
+    </form>
+
+    <div class="suggested-types-container neu-container">
+      <h3>Suggested Business Types:</h3>
+      <input type="text" id="typeSearch" placeholder="Search business types..." />
+      <div id="presetTypes"></div>
+    </div>
+  </div>
+
+  <table id="resultsTable" style="margin-top:1rem; display: none;">
+    <thead>
+      <tr>
+        <th>#</th> 
+        <th>Name</th>
+        <th>Address</th>
+        <th style="width: 200px;">Phone</th>
+        <th>Website</th>
+        <th>Rating</th>
+        <th style="width: 400px;">Type</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <p class="footer-copyright">© 2025 Jan Francis Israel. All rights reserved.</p>
+      <div class="footer-links">
+        <a href="https://janisrael.com" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          janisrael.com
+        </a>
+        <span class="footer-separator">|</span>
+        <a href="https://huggingface.co/swordfish7412" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+          </svg>
+          HuggingFace
+        </a>
+        <span class="footer-separator">|</span>
+        <a href="https://github.com/janfrancisisrael" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
+          </svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </footer>
+
+ <script src="app.js"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDBEBo8XAwHoi1zwtSh2UuYS3WOgNljiKc&libraries=places"></script>
+</body>
+</html>

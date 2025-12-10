@@ -1,0 +1,56 @@
+# Git
+.git
+.gitignore
+.github
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+myenv/
+env/
+ENV/
+
+# Development
+.env
+.env.*
+*.log
+*.db
+*.sqlite
+*.sqlite3
+
+# Data files
+data/
+*.csv
+*.zip
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+access.log*
+
+# Documentation
+*.md
+!README.md
+
+# CI/CD
+.github/workflows/
+
