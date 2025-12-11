@@ -402,3 +402,4 @@ This tool uses Google Places API, which is subject to Google's Terms of Service.
 ---
 
 **Note**: This application migrated from PHP to Python Flask for better maintainability and deployment flexibility. Legacy PHP files may still exist in the repository but are not actively used.
+# Trigger Lead Finder rebuild
